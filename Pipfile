@@ -1,0 +1,16 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pylint = "*"
+pytest = "*"
+pydocstyle = "*"
+
+[packages]
+gitignore-parser = "*"
+debugprint = "*"
+
+[requires]
+python_version = "3.8"
