@@ -34,7 +34,7 @@ def test_tidy():
     subprocess.run(
         [
             "python",
-            "connoisseur.py",
+            "connoisseur/connoisseur.py",
             "tidy",
             "-y",
             "-v",
@@ -51,7 +51,7 @@ def test_copy():
     subprocess.run(
         [
             "python",
-            "connoisseur.py",
+            "connoisseur/connoisseur.py",
             "copy",
             "-y",
             "-v",
@@ -71,7 +71,7 @@ def test_dry_run_tidy():
     subprocess.run(
         [
             "python",
-            "connoisseur.py",
+            "connoisseur/connoisseur.py",
             "tidy",
             "--dry-run",
             "./test/spec_files/test_tidy_reject_spec",
@@ -81,7 +81,7 @@ def test_dry_run_tidy():
     subprocess.run(
         [
             "python",
-            "connoisseur.py",
+            "connoisseur/connoisseur.py",
             "tidy",
             "-d",
             "./test/spec_files/test_tidy_reject_spec",
@@ -100,7 +100,7 @@ def test_dry_run_copy():
     subprocess.run(
         [
             "python",
-            "connoisseur.py",
+            "connoisseur/connoisseur.py",
             "copy",
             "--dry-run",
             "./test/spec_files/test_tidy_reject_spec",
@@ -111,7 +111,7 @@ def test_dry_run_copy():
     subprocess.run(
         [
             "python",
-            "connoisseur.py",
+            "connoisseur/connoisseur.py",
             "copy",
             "-d",
             "./test/spec_files/test_tidy_reject_spec",
