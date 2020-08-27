@@ -5,9 +5,10 @@ with open("README.md", "r") as file:
 
 setup(
     name="connoisseur",
-    version="0.1.0",
+    version="0.1.1",
     license="GPLv3",
     packages=find_packages(),
+    entry_points={"console_scripts": ["connoisseur=connoisseur.py"]},
     author="Phil Howe",
     author_email="phil.a.r.howe@gmail.com",
     description="A utility for selective copying and deletion of complex directory structures",
