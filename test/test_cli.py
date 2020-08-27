@@ -47,8 +47,6 @@ def test_tidy():
 
 
 def test_copy():
-    # GIVEN
-    # shutil.copytree("./test/stub_input/a", "./test/temp/a")
     # WHEN
     subprocess.run(
         [
@@ -64,3 +62,62 @@ def test_copy():
     )
     # THEN
     assert_dir_trees_are_equal("./test/temp/a", "./test/stub_output/tidied_a")
+
+
+def test_dry_run_tidy():
+    # GIVEN
+    shutil.copytree("./test/stub_input/a", "./test/temp/a")
+    # WHEN
+    subprocess.run(
+        [
+            "python",
+            "connoisseur.py",
+            "tidy",
+            "--dry-run",
+            "./test/spec_files/test_tidy_reject_spec",
+            "./test/temp/a",
+        ]
+    )
+    subprocess.run(
+        [
+            "python",
+            "connoisseur.py",
+            "tidy",
+            "-d",
+            "./test/spec_files/test_tidy_reject_spec",
+            "./test/temp/a",
+        ]
+    )
+    # THEN
+    assert_dir_trees_are_equal("./test/temp/a", "./test/stub_input/a")
+
+
+def test_dry_run_copy():
+    # GIVEN
+    if os.path.isdir("./test/temp"):
+        shutil.rmtree("./test/temp")
+    # WHEN
+    subprocess.run(
+        [
+            "python",
+            "connoisseur.py",
+            "copy",
+            "--dry-run",
+            "./test/spec_files/test_tidy_reject_spec",
+            "./test/stub_input/a",
+            "./test/temp/a",
+        ]
+    )
+    subprocess.run(
+        [
+            "python",
+            "connoisseur.py",
+            "copy",
+            "-d",
+            "./test/spec_files/test_tidy_reject_spec",
+            "./test/stub_input/a",
+            "./test/temp/a",
+        ]
+    )
+    # THEN
+    assert not os.path.isdir("./test/temp")
