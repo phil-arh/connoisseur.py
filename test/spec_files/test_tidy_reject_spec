@@ -1,0 +1,4 @@
+README
+*.js
+d/**
+!f
