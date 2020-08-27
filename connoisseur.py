@@ -8,8 +8,6 @@ from debugprint import Debug
 
 debug = Debug("connoisseur")
 
-leading_slash_re = re.compile(r"^\/")
-
 
 def errpr(string, should_print):
     if should_print:
@@ -22,42 +20,51 @@ def printif(string, should_print):
 
 
 def check_continue(path):
-    return
-    """
+    """Perform a user check whether to continue. Exit if not confirmed."""
     should_continue = input(
         "This will probably delete or overwrite some files at {}. Are you "
         "sure you want to continue? y/N  ".format(path)
     )
     if should_continue not in "yY":
-        print("Not running...connoisseur will now exit.")
+        sys.stderr.write("Not running...connoisseur will now exit.\n")
         sys.exit()
-    """
 
 
-def get_absolute_path(relative_path):
-    """Convert a relative path to an absolute path."""
-    return os.path.join(os.getcwd(), relative_path)
+leading_slash_re = re.compile(r"^\/")
 
 
-def delete_path(path):
-    """Delete a path regardless of whether a file or directory."""
-    debug(f"deleting {path}")
-    """
-    if os.path.isdir(path):
-        shutil.rmtree(path)
-    elif os.path.isfile(path):
-        os.remove(path)
-    """
+class ModifyFS:
+    """Class to bundle operations that modify the file system together."""
 
+    @staticmethod
+    def delete_path(path):
+        """Delete a path regardless of whether a file or directory."""
+        debug(f"deleting {path}")
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        elif os.path.isfile(path):
+            os.remove(path)
 
-def copy_path(path, origin, destination):
-    extension = leading_slash_re.sub("", path.replace(origin, ""))
-    # debug(os.path.split(extension))
-    folders = os.path.split(extension)[0]
-    dest_folders = os.path.join(destination, folders)
-    if not os.path.isdir(dest_folders):
-        os.makedirs(dest_folders)
-    shutil.copy(path, dest_folders)
+    @staticmethod
+    def copy_path(path, origin, destination):
+        extension = leading_slash_re.sub("", path.replace(origin, ""))
+        # debug(os.path.split(extension))
+        folders = os.path.split(extension)[0]
+        dest_folders = os.path.join(destination, folders)
+        if not os.path.isdir(dest_folders):
+            os.makedirs(dest_folders)
+        shutil.copy(path, dest_folders)
+
+    @staticmethod
+    def clear_empty_directories(origin):
+        for root, dirs, ignored in os.walk(origin):
+            for dir in dirs:
+                path = os.path.join(root, dir)
+                # debug(path, "path")
+                # debug(os.listdir(path), "listdir")
+                if not os.listdir(path):
+                    # debug("deleting directory")
+                    shutil.rmtree(path)
 
 
 class CheckerFromRejectFile:
@@ -105,8 +112,6 @@ class CheckerFromSelectFile:
 
 def get_files_to_copy(origin, destination, checker):
     output = []
-    if not os.path.isdir(destination):
-        os.makedirs(destination)
     for root, ignored, files in os.walk(origin):
         for file in files:
             path = os.path.join(root, file)
@@ -116,22 +121,16 @@ def get_files_to_copy(origin, destination, checker):
     return output
 
 
-def copy(origin, destination, checker, dry_run=False, verbose=False):
+def copy(origin, destination, checker, dry_run=True, verbose=False):
     errpr("Getting list of files to copy...", (verbose or dry_run))
     files_to_copy = get_files_to_copy(origin, destination, checker)
     errpr("Copying...", (verbose or dry_run))
     for path in files_to_copy:
         printif(path, (verbose or dry_run))
+        debug("maybe copying...")
         if not dry_run:
-            copy_path(path, origin, destination)
-
-
-def clear_empty_directories(origin):
-    for root, dirs, ignored in os.walk(origin):
-        for dir in dirs:
-            path = os.path.join(root, dir)
-            if not os.listdir(path):
-                shutil.rmtree(path)
+            debug("copying...")
+            ModifyFS.copy_path(path, origin, destination)
 
 
 def get_files_to_tidy(origin, checker):
@@ -149,17 +148,19 @@ def get_files_to_tidy(origin, checker):
             # debug(reject(checker, origin, path), "should reject")
             if checker.reject(path):
                 output.append(path)
+    return output
 
 
-def tidy(origin, checker, dry_run=False, verbose=False):
+def tidy(origin, checker, dry_run=True, verbose=False):
     errpr("Getting list of files to delete...", (dry_run or verbose))
     files_to_delete = get_files_to_tidy(origin, checker)
     errpr("Deleting...", (dry_run or verbose))
     for path in files_to_delete:
         printif(path, (verbose or dry_run))
         if not dry_run:
-            delete_path(path)
-    clear_empty_directories(origin)
+            ModifyFS.delete_path(path)
+    if not dry_run:
+        ModifyFS.clear_empty_directories(origin)
 
 
 if __name__ == "__main__":
@@ -168,28 +169,65 @@ if __name__ == "__main__":
         prog="connoisseur", description="Utility for selective copying and deleting",
     )
 
-    parser.add_argument("action")
-    parser.add_argument("connoisseur_file")
-    parser.add_argument("origin", type=str)
+    parser.add_argument(
+        "action",
+        choices=["copy", "tidy"],
+        help="Action for connoisseur to perform - tidy up a directory tree or "
+        "selectively copy it to a new one.",
+    )
+    parser.add_argument(
+        "spec_file",
+        help="Path to the spec file being used. Spec file should be written "
+        "in gitignore format.",
+    )
+    parser.add_argument(
+        "origin",
+        help="Path to be tidied (in tidy) or used as a source of files to be "
+        "copied to the destination (in copy).",
+    )
     if sys.argv[1] == "copy":
         parser.add_argument(
-            "destination", type=str,
+            "destination", help="Destination for files and folders to be copied to."
         )
-    parser.add_argument("-s", "--spec-type", choices=["select", "reject"])
-    parser.add_argument("-d", "--dry-run", action="store_true")
-    parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument(
+        "-s",
+        "--spec-type",
+        choices=["select", "reject"],
+        help="Set spec type - defaults to 'reject' if not specified.",
+    )
+    parser.add_argument(
+        "-d",
+        "--dry-run",
+        action="store_true",
+        help="If specified, carries out a dry run - prints to stdout paths of "
+        "all files to be copied (in a copy operation) or deleted (in a tidy "
+        "operation) but does not alter the filesystem.",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Prints to stdout paths of all files copied (in a copy "
+        "operation) or deleted (in a tidy operation).",
+    )
+    parser.add_argument(
+        "-y",
+        "--skip-confirmation-check",
+        action="store_true",
+        help="Skips confirmation check",
+    )
     args = parser.parse_args()
 
-    # debug(dir(args))
-    if args.file_type:
-        if args.file_type == "select":
-            checker = CheckerFromSelectFile(args.connoisseur_file, args.origin)
+    if args.spec_type:
+        if args.spec_type == "select":
+            checker = CheckerFromSelectFile(args.spec_file, args.origin)
     else:
-        checker = CheckerFromRejectFile(args.connoisseur_file, args.origin)
+        checker = CheckerFromRejectFile(args.spec_file, args.origin)
 
     if args.action == "copy":
         if os.path.isdir(args.destination) and os.listdir(args.destination):
-            check_continue(args.destination)
+            if not (args.skip_confirmation_check or args.dry_run):
+                check_continue(args.destination)
         copy(
             args.origin,
             args.destination,
@@ -198,5 +236,6 @@ if __name__ == "__main__":
             verbose=args.verbose,
         )
     else:
-        check_continue(args.origin)
+        if not (args.skip_confirmation_check or args.dry_run):
+            check_continue(args.origin)
         tidy(args.origin, checker, dry_run=args.dry_run, verbose=args.verbose)
