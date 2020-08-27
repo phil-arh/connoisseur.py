@@ -163,8 +163,7 @@ def tidy(origin, checker, dry_run=True, verbose=False):
         ModifyFS.clear_empty_directories(origin)
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(
         prog="connoisseur", description="Utility for selective copying and deleting",
     )
@@ -239,3 +238,7 @@ if __name__ == "__main__":
         if not (args.skip_confirmation_check or args.dry_run):
             check_continue(args.origin)
         tidy(args.origin, checker, dry_run=args.dry_run, verbose=args.verbose)
+
+
+if __name__ == "__main__":
+    main()
