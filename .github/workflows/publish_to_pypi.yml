@@ -19,6 +19,7 @@ jobs:
         python -m pip install setuptools
         python -m pip install wheel
         python -m pip install pipenv
+        pipenv shell
         pipenv install --dev
     - name: 'run tests'
       run: pytest -s -v
