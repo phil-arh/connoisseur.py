@@ -5,7 +5,7 @@ with open("README.md", "r") as file:
 
 setup(
     name="connoisseur",
-    version="0.1.5",
+    version="0.1.6",
     license="GPLv3",
     packages=find_packages(),
     entry_points={"console_scripts": ["connoisseur=connoisseur:main"]},
