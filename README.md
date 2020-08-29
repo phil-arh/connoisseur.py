@@ -119,6 +119,25 @@ Performs the same print-out as `--verbose` but doesn't perform the operation - s
 
 Skips the confirmation prompt that normally shows when using Connoisseur. Useful in CI pipelines and Docker builds.
 
+## Recursion limit
+
+If you're trying to use Connoisseur on very deeply nested directory structures, you may hit your system recursion limit. On most systems, this is 1000 stack frames, which in the context of Connoisseur means a maximum directory depth of 998. If this happens, you can look at raising Python's recursion limit (provided you've got enough memory to handle that). To do that, you'll need to import Connoisseur to a Python script and call the script as a command line tool like:
+
+```python
+# in a file called extra_recursion_connoisseur.py
+import sys
+import connoisseur
+
+sys.setrecursionlimit(1500) # or however high it needs to be
+connoisseur.main()
+
+# call this script at command line like: python3 extra_recursion_connoisseur.py copy /path/to/reject_spec ...etc.
+```
+
+Beware though! At some point, your system will become unstable if the recursion limit is too high as Connoisseur might end up using excessive amounts of memory.
+
+I'll probably see at some point if I can re-implement directory walking iteratively but until then this is probably your best bet to deal with very deep directory nesting.
+
 ## Testing
 
 Test using pytest by doing `pytest test`. To get debug printout run `DEBUG=connoisseur pytest -s test`.
